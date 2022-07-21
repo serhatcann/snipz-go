@@ -9,7 +9,11 @@
 		<header>
 			<h1><a href="/">Snipz</a></h1>
 		</header>
-		<main>{{template "main" .}}</main>
+		<!-- Invoke the navigation template -->
+		{{template "nav" .}}
+		<main>
+			{{template "main" .}}
+		</main>
 		<footer>Powered by <a href="https://golang.org/">Go</a></footer>
 	</body>
 </html>
