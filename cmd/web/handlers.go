@@ -3,20 +3,22 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 )
 
 // Define a home handler function which writes a byte slice containing
 // "Hello from Snipz" as the response body.
-func home(w http.ResponseWriter, r *http.Request) {
+// Change the signature of the home handler so it is defined as a method against
+// *application.
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
+
 	// Check if the current request URL path exactly matches "/". If it doesn't, use
-	// the http.NotFound() function to send a 404 response to the client.
+	// the app.notFound() function to send a 404 response to the client.
 	// Importantly, we then return from the handler. If we don't return the handler
 	// would keep executing and also write the "Hello from SnippetBox" message.
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		app.notFound(w) // Use the notFound() helper
 		return
 	}
 
@@ -34,8 +36,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// paths as a variadic parameter?
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err) // Use the serverError() helper.
 		return
 	}
 
@@ -43,13 +44,14 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// template as the response body.
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err) // Use the serverError() helper.
 	}
 }
 
 // Add a snippetView handler function.
-func snippetView(w http.ResponseWriter, r *http.Request) {
+// Change the signature of the snippetView handler so it is defined as a method
+// against *application.
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 	// Extract the value of the id parameter from the query string and try to
 	// convert it to an integer using the strconv.Atoi() function. If it can't
@@ -57,20 +59,20 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 	// not found response.
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		app.notFound(w) // Use the notFound() helper.
 		return
 	}
 	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
 }
 
 // Add a snippetCreate handler function.
-func snippetCreate(w http.ResponseWriter, r *http.Request) {
+// Change the signature of the snippetCreate handler so it is defined as a method
+// against *application.
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
 
-		// Use the http.Error() function to send a 405 status code and "Method Not
-		// Allowed" string as the response body.
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
 		return
 	}
 
